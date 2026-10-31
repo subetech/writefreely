@@ -2,8 +2,8 @@
 <html>
 	<head>
 		{{ template "head" . }}
-		<link rel="stylesheet" type="text/css" href="/css/{{.Theme}}.css" />
-		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+		<link rel="stylesheet" type="text/css" href="{{asset (printf "/css/%s.css" .Theme)}}" />
+		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 		<link rel="shortcut icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -69,16 +69,16 @@
 		{{ template "footer" . }}
 		
 		{{if not .JSDisabled}}
-		<script type="text/javascript" src="/js/menu.js"></script>
+		<script type="text/javascript" src="{{asset "/js/menu.js"}}"></script>
 		<script type="text/javascript">
 		{{if .WebFonts}}
 		try { // Google Fonts
 		  WebFontConfig = {
-			custom: { families: [ 'Lora:400,700:latin', 'Open+Sans:400,700:latin' ], urls: [ '/css/fonts.css' ] }
+			custom: { families: [ 'Lora:400,700:latin', 'Open+Sans:400,700:latin' ], urls: [ '{{asset "/css/fonts.css"}}' ] }
 		  };
 		  (function() {
 			var wf = document.createElement('script');
-			wf.src = '/js/webfont.js';
+			wf.src = '{{asset "/js/webfont.js"}}';
 			wf.type = 'text/javascript';
 			wf.async = 'true';
 			var s = document.getElementsByTagName('script')[0];
@@ -88,7 +88,7 @@
 		{{end}}
 		</script>
 		{{else}}
-			{{if .WebFonts}}<link href="/css/fonts.css" rel="stylesheet" type="text/css" />{{end}}
+			{{if .WebFonts}}<link href="{{asset "/css/fonts.css"}}" rel="stylesheet" type="text/css" />{{end}}
 		{{end}}
 	</body>
 </html>{{end}}

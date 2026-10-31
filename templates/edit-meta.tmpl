@@ -4,8 +4,8 @@
 
 		<title>Edit metadata: {{if .Post.Title}}{{.Post.Title}}{{else}}{{.Post.Id}}{{end}} &mdash; {{.SiteName}}</title>
 
-		<link rel="stylesheet" type="text/css" href="/css/write.css" />
-		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+		<link rel="stylesheet" type="text/css" href="{{asset "/css/write.css"}}" />
+		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<style type="text/css">
 		dt {
@@ -31,6 +31,29 @@
 		}
 		.content-container h2 a:hover {
 			text-decoration: underline;
+		}
+		.tz-label, .tz-note {
+			color: #888;
+			font-size: 0.86em;
+		}
+		.tz-block {
+			display: block;
+			margin-top: 0.25em;
+		}
+		#publish-section {
+			margin-top: 3em;
+			padding-top: 1.5em;
+			border-top: 1px solid #ddd;
+		}
+		#publish-section h3 {
+			margin-top: 0;
+		}
+		#publish-at {
+			margin-left: 0.5em;
+		}
+		#publish-status.error {
+			display: inline;
+			color: #e21d27;
 		}
 		</style>
 
@@ -256,9 +279,11 @@
 					</dd>
 					<dt><label for="rtl">Direction</label></dt>
 					<dd><input type="checkbox" id="rtl" name="rtl" {{if .Post.IsRTL.Bool}}checked="checked"{{end}} /><label for="rtl"> right-to-left</label></dd>
-					<dt><label for="created">Created</label></dt>
+					<dt><label for="created">{{if .EditCollection}}Publish date{{else}}Created{{end}}</label></dt>
 					<dd>
-                        <input type="datetime-local" id="created" name="created" value="{{.Post.UserFacingCreated}}" data-time="{{.Post.Created8601}}" step="1" /> <span id="tz">UTC</span> <a href="#" id="set-now">now</a>
+                        <input type="datetime-local" id="created" name="created" value="{{.Post.UserFacingCreated}}" data-time="{{.Post.Created8601}}" step="1" /> <a href="#" id="set-now">now</a>
+						<span id="tz" class="tz-label tz-block">UTC</span>
+						{{if .EditCollection}}<p class="tz-note">{{if .Post.IsScheduled}}This post is scheduled: it'll appear on your blog at this time. {{end}}Set a future date to schedule the post.</p>{{end}}
 						<p class="error" id="create-error">Date format should be: <span class="mono"><abbr title="The full year">YYYY</abbr>-<abbr title="The numeric month of the year, where January = 1, with a zero in front if less than 10">MM</abbr>-<abbr title="The day of the month, with a zero in front if less than 10">DD</abbr> <abbr title="The hour (00-23), with a zero in front if less than 10.">HH</abbr>:<abbr title="The minute of the hour (00-59), with a zero in front if less than 10.">MM</abbr>:<abbr title="The seconds (00-59), with a zero in front if less than 10.">SS</abbr></span></p>
 					</dd>
                     <dt><label for="lang">Font</label></dt>
@@ -275,9 +300,33 @@
 				</dl>
 				<input type="hidden" name="web" value="true" />
 			</form>
+
+			{{if and (not .EditCollection) .Blogs}}
+			<div id="publish-section">
+				<h3>Publish</h3>
+				<p class="tz-note">Move this draft to your blog now, or schedule it. A scheduled post can be opened via its link right away, but only appears on your blog's main page, feed, etc. at the chosen time.</p>
+				<dl class="dl-horizontal">
+					{{if gt (len .Blogs) 1}}
+					<dt><label for="publish-blog">Blog</label></dt>
+					<dd><select id="publish-blog" class="inputform">{{range .Blogs}}<option value="{{.Alias}}">{{.DisplayTitle}}</option>{{end}}</select></dd>
+					{{else}}{{range .Blogs}}<input type="hidden" id="publish-blog" value="{{.Alias}}" />{{end}}{{end}}
+					<dt><label for="publish-when">When</label></dt>
+					<dd>
+						<select id="publish-when" class="inputform">
+							<option value="now" selected="selected">Now</option>
+							<option value="later">At a set time</option>
+						</select>
+						<input type="datetime-local" id="publish-at" step="60" style="display:none" />
+						<span id="publish-tz" class="tz-label tz-block" style="display:none"></span>
+					</dd>
+					<dt>&nbsp;</dt><dd><input type="submit" id="publish-btn" value="Publish now" /> <span id="publish-status" class="tz-note"></span></dd>
+				</dl>
+			</div>
+			{{end}}
 		</div>
 
-		<script src="/js/h.js"></script>
+		<script src="{{asset "/js/h.js"}}"></script>
+		<script src="{{asset "/js/scheduled.js"}}"></script>
 		<script>
 function updateMeta() {
 	if ({{.Silenced}}) {
@@ -291,7 +340,7 @@ function updateMeta() {
     $created.type = "text";
     $created.value = finalDate+"Z";
 	var $tz = document.getElementById('tz');
-	$tz.style.display = "inline";
+	$tz.textContent = "UTC";
 	var $submit = document.querySelector('input[type=submit]');
 	$submit.value = "Saving...";
 	$submit.disabled = true;
@@ -304,14 +353,117 @@ function setLocalTime() {
 	var $created = document.getElementById('created');
 	var d = new Date($created.getAttribute('data-time'));
 	$created.value = dateToStr(d);
-	var $tz = document.getElementById('tz');
-	$tz.style.display = "none";
+	updateTZ();
 }
+// Show which time zone the date is entered in (the browser's)
+function updateTZ() {
+	var $tz = document.getElementById('tz');
+	$tz.textContent = WFTime.tzLabel(new Date(document.getElementById('created').value));
+}
+H.getEl('created').on('input', updateTZ);
 setLocalTime();
 function setToNow() {
 	var $created = document.getElementById('created');
 	$created.value = dateToStr(new Date());
+	updateTZ();
 }
+
+// Publishing / scheduling a draft
+(function() {
+	var $btn = document.getElementById('publish-btn');
+	if ($btn === null) {
+		return;
+	}
+	var $when = document.getElementById('publish-when');
+	var $at = document.getElementById('publish-at');
+	var $tz = document.getElementById('publish-tz');
+	var $status = document.getElementById('publish-status');
+	var $blog = document.getElementById('publish-blog');
+	var publishing = false;
+	var singleUser = {{.SingleUser}};
+
+	var setStatus = function(msg, isError) {
+		$status.textContent = msg || '';
+		$status.className = isError ? 'error' : 'tz-note';
+	};
+	var update = function() {
+		var later = $when.value == 'later';
+		$at.style.display = later ? 'inline-block' : 'none';
+		$tz.style.display = later ? 'block' : 'none';
+		if (later && !$at.value) {
+			// Default to the start of the next hour
+			var d = new Date();
+			d.setHours(d.getHours() + 1, 0, 0, 0);
+			$at.value = WFTime.toLocalInput(d);
+		}
+		$tz.textContent = WFTime.tzLabel(new Date($at.value));
+		$btn.value = later ? 'Schedule' : 'Publish now';
+		setStatus('');
+	};
+	$when.addEventListener('change', update);
+	$at.addEventListener('input', update);
+	update();
+
+	$btn.addEventListener('click', function(e) {
+		e.preventDefault();
+		if (publishing) {
+			return;
+		}
+		if ({{.Silenced}}) {
+			alert("Your account is silenced, so you can't publish posts.");
+			return;
+		}
+		var params = {id: "{{.Post.Id}}"};
+		var date = null;
+		if ($when.value == 'later') {
+			date = new Date($at.value);
+			if ($at.value == '' || isNaN(date.getTime())) {
+				setStatus('Please choose when to publish this post.', true);
+				return;
+			}
+			if (date <= new Date() && !confirm("This time is in the past, so the post will appear on your blog right away, dated " + WFTime.format(date) + ". Continue?")) {
+				return;
+			}
+			params.created = WFTime.toAPI(date);
+		}
+
+		publishing = true;
+		$btn.disabled = true;
+		setStatus(date ? 'Scheduling...' : 'Publishing...');
+		var alias = $blog.value;
+		var http = new XMLHttpRequest();
+		http.open("POST", "/api/collections/" + encodeURIComponent(alias) + "/collect", true);
+		http.setRequestHeader("Content-type", "application/json");
+		http.onreadystatechange = function() {
+			if (http.readyState != 4) {
+				return;
+			}
+			publishing = false;
+			$btn.disabled = false;
+			var res = null;
+			try {
+				res = JSON.parse(http.responseText);
+			} catch (e) {}
+			if (http.status == 200 && res && res.data.length && res.data[0].code == 200) {
+				if (date && date > new Date()) {
+					// Show it in the list of scheduled posts
+					window.location = '/me/posts/';
+				} else {
+					window.location = (singleUser ? '' : '/' + alias) + '/' + res.data[0].post.slug;
+				}
+				return;
+			}
+			var msg = 'Failed to publish. Please try again.';
+			if (res && res.data && res.data.length && res.data[0].error_msg) {
+				msg = res.data[0].error_msg;
+			} else if (res && res.error_msg) {
+				msg = res.error_msg;
+			}
+			setStatus(msg, true);
+		};
+		http.send(JSON.stringify([params]));
+	});
+})();
 H.getEl('set-now').on('click', function(e) {
 	e.preventDefault();
 	setToNow();
@@ -359,12 +511,12 @@ H.getEl('set-now').on('click', function(e) {
 		});
 
 		WebFontConfig = {
-			custom: { families: [ 'Lora:400,700:latin' ], urls: [ '/css/fonts.css' ] }
+			custom: { families: [ 'Lora:400,700:latin' ], urls: [ '{{asset "/css/fonts.css"}}' ] }
 		};
 		try {
 		  (function() {
 			var wf=document.createElement('script');
-			wf.src = '/js/webfont.js';
+			wf.src = '{{asset "/js/webfont.js"}}';
 			wf.type='text/javascript';
 			wf.async='true';
 			var s=document.getElementsByTagName('script')[0];
@@ -374,6 +526,6 @@ H.getEl('set-now').on('click', function(e) {
 		  // whatevs
 		}
 		</script>
-		<link href="/css/icons.css" rel="stylesheet">
+		<link href="{{asset "/css/icons.css"}}" rel="stylesheet">
 	</body>
 </html>{{end}}

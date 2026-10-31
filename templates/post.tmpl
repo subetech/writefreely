@@ -6,10 +6,10 @@
 		<title>{{if .Title}}{{.Title}}{{else}}{{.GenTitle}}{{end}} {{localhtml "title dash" .Language}} {{.SiteName}}</title>
 		
 		{{if .IsCode}}
-		<link rel="stylesheet" href="/css/lib/mono-blue.min.css">
+		<link rel="stylesheet" href="{{asset "/css/lib/mono-blue.min.css"}}">
 		{{end}}
-		<link rel="stylesheet" type="text/css" href="/css/write.css" />
-		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+		<link rel="stylesheet" type="text/css" href="{{asset "/css/write.css"}}" />
+		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 		<link rel="shortcut icon" href="/favicon.ico" />
 		<link rel="canonical" href="{{.Host}}/{{if .SingleUser}}d/{{end}}{{.ID}}" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -60,22 +60,22 @@
 	</body>
 	
 	{{if .IsCode}}
-	<script src="/js/highlight.min.js"></script>
+	<script src="{{asset "/js/highlight.min.js"}}"></script>
 	<script>
 	hljs.highlightBlock(document.getElementById('post-body'));
 	</script>
 	{{else}}
-	<script src="/js/h.js"></script>
-	{{if .IsPlainText}}<script src="/js/twitter-text.min.js"></script>{{end}}
+	<script src="{{asset "/js/h.js"}}"></script>
+	{{if .IsPlainText}}<script src="{{asset "/js/twitter-text.min.js"}}"></script>{{end}}
 	{{end}}
 	<script type="text/javascript">
 	try {
 	  WebFontConfig = {
-		custom: { families: [ 'Lora:400,700:latin'{{if eq .Font "sans"}}, 'Open+Sans:400,700:latin'{{end}} ], urls: [ '/css/fonts.css' ] }
+		custom: { families: [ 'Lora:400,700:latin'{{if eq .Font "sans"}}, 'Open+Sans:400,700:latin'{{end}} ], urls: [ '{{asset "/css/fonts.css"}}' ] }
 	  };
 	  (function() {
 		var wf = document.createElement('script');
-		wf.src = '/js/webfont.js';
+		wf.src = '{{asset "/js/webfont.js"}}';
 		wf.type = 'text/javascript';
 		wf.async = 'true';
 		var s = document.getElementsByTagName('script')[0];

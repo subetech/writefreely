@@ -76,6 +76,12 @@ func InitRoutes(apper Apper, r *mux.Router) *mux.Router {
 	// handle mentions
 	write.HandleFunc("/@/{handle}", handler.Web(handleViewMention, UserLevelReader))
 
+	// Uploaded images. Only individual files are served; never a listing.
+	write.HandleFunc("/"+mediaDir+"/{filename}", handler.Web(handleViewMedia, UserLevelReader)).Methods("GET", "HEAD")
+	write.HandleFunc("/"+mediaDir+"/", handler.Web(func(app *App, w http.ResponseWriter, r *http.Request) error {
+		return errMediaNotFound
+	}, UserLevelReader))
+
 	configureSlackOauth(handler, write, apper.App())
 	configureWriteAsOauth(handler, write, apper.App())
 	configureGitlabOauth(handler, write, apper.App())
@@ -115,6 +121,8 @@ func InitRoutes(apper Apper, r *mux.Router) *mux.Router {
 	apiMe := write.PathPrefix("/api/me/").Subrouter()
 	apiMe.HandleFunc("/", handler.All(viewMeAPI)).Methods("GET")
 	apiMe.HandleFunc("/posts", handler.UserWebAPI(viewMyPostsAPI)).Methods("GET")
+	apiMe.HandleFunc("/media", handler.UserWebAPI(handleListMedia)).Methods("GET")
+	apiMe.HandleFunc("/media", handler.UserWebAPI(handleUploadMedia)).Methods("POST")
 	apiMe.HandleFunc("/collections", handler.UserAPI(viewMyCollectionsAPI)).Methods("GET")
 	apiMe.HandleFunc("/password", handler.All(updatePassphrase)).Methods("POST")
 	apiMe.Path("/self").Handler(csrfProtectForm(apper.App().keys.CSRFKey, handler.All(updateSettings))).Methods("POST")

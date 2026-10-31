@@ -46,6 +46,9 @@ type (
 		StaticParentDir    string `ini:"static_parent_dir"`
 		PagesParentDir     string `ini:"pages_parent_dir"`
 		KeysParentDir      string `ini:"keys_parent_dir"`
+		// MediaParentDir is where the "media" directory with uploaded images
+		// lives. Defaults to the current working directory.
+		MediaParentDir string `ini:"media_parent_dir"`
 
 		HashSeed string `ini:"hash_seed"`
 

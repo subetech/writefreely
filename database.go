@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -886,6 +887,12 @@ func (db *datastore) GetCollectionBy(condition string, value interface{}) (*Coll
 	c.Public = c.IsPublic()
 	c.Monetization = db.GetCollectionAttribute(c.ID, "monetization_pointer")
 	c.Verification = db.GetCollectionAttribute(c.ID, "verification_link")
+	c.Layout = db.GetCollectionAttribute(c.ID, collAttrLayout)
+	if c.Layout != collLayoutGrid {
+		c.Layout = collLayoutList
+	}
+	c.GridLines, _ = strconv.Atoi(db.GetCollectionAttribute(c.ID, collAttrGridLines))
+	c.GridLines = normalizeGridLines(c.GridLines)
 
 	c.db = db
 
@@ -956,7 +963,7 @@ func (db *datastore) UpdateCollection(app *App, c *SubmittedCollection, alias st
 	// WHERE values
 	q.Where("alias = ? AND owner_id = ?", alias, c.OwnerID)
 
-	if q.Updates == "" && c.Monetization == nil {
+	if q.Updates == "" && c.Monetization == nil && c.Layout == nil && c.GridLines == nil {
 		return ErrPostNoUpdatableVals
 	}
 
@@ -1027,6 +1034,26 @@ func (db *datastore) UpdateCollection(app *App, c *SubmittedCollection, alias st
 				log.Error("Unable to insert verification_link value: %v", err)
 				return err
 			}
+		}
+	}
+
+	// Update blog index layout
+	if c.Layout != nil {
+		layout := collLayoutList
+		if *c.Layout == collLayoutGrid {
+			layout = collLayoutGrid
+		}
+		err = db.SetCollectionAttribute(collID, collAttrLayout, layout)
+		if err != nil {
+			log.Error("Unable to insert layout value: %v", err)
+			return err
+		}
+	}
+	if c.GridLines != nil {
+		err = db.SetCollectionAttribute(collID, collAttrGridLines, strconv.Itoa(normalizeGridLines(*c.GridLines)))
+		if err != nil {
+			log.Error("Unable to insert grid_lines value: %v", err)
+			return err
 		}
 	}
 
@@ -1738,6 +1765,16 @@ func (db *datastore) ClaimPosts(cfg *config.Config, userID int64, collAlias stri
 			// token is given.
 			r.ErrorMessage += "Missing post Edit Token `token`."
 		}
+		var publishAt *time.Time
+		if p.Created != nil && *p.Created != "" {
+			t, err := time.Parse(postMetaDateFormat, *p.Created)
+			if err != nil {
+				r.ErrorMessage += "Invalid `created` date; expected format " + postMetaDateFormat + "."
+			} else {
+				t = t.UTC()
+				publishAt = &t
+			}
+		}
 		if r.ErrorMessage != "" {
 			// Post validate failed
 			r.Code = http.StatusBadRequest
@@ -1810,15 +1847,28 @@ func (db *datastore) ClaimPosts(cfg *config.Config, userID int64, collAlias stri
 			if p.Slug == "" {
 				p.Slug = p.ID
 			}
+			// Optionally set the publish date (used for scheduling posts)
+			createdSet := ""
+			if publishAt != nil {
+				createdSet = ", created = ?"
+			}
 			if canCollect {
 				// User already owns this post, so just add it to the given
 				// collection.
-				query = "UPDATE posts SET collection_id = ?, slug = ? WHERE id = ? AND owner_id = ?"
-				params = []interface{}{coll.ID, p.Slug, p.ID, userID}
+				query = "UPDATE posts SET collection_id = ?, slug = ?" + createdSet + " WHERE id = ? AND owner_id = ?"
+				params = []interface{}{coll.ID, p.Slug}
+				if publishAt != nil {
+					params = append(params, *publishAt)
+				}
+				params = append(params, p.ID, userID)
 				slugIdx = 1
 			} else {
-				query = "UPDATE posts SET owner_id = ?, collection_id = ?, slug = ? WHERE id = ? AND modify_token = ? AND owner_id IS NULL"
-				params = []interface{}{userID, coll.ID, p.Slug, p.ID, p.Token}
+				query = "UPDATE posts SET owner_id = ?, collection_id = ?, slug = ?" + createdSet + " WHERE id = ? AND modify_token = ? AND owner_id IS NULL"
+				params = []interface{}{userID, coll.ID, p.Slug}
+				if publishAt != nil {
+					params = append(params, *publishAt)
+				}
+				params = append(params, p.ID, p.Token)
 				slugIdx = 2
 			}
 		} else {

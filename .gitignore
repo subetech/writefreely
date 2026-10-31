@@ -10,3 +10,5 @@ tmp
 *.db
 
 bindata.go
+dumps
+/media/

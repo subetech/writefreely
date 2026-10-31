@@ -4,8 +4,8 @@
 
 		<title>{{if .Editing}}Editing {{if .Post.Title}}{{.Post.Title}}{{else}}{{.Post.Id}}{{end}}{{else}}New Post{{end}} &mdash; {{.SiteName}}</title>
 		
-		<link rel="stylesheet" type="text/css" href="/css/write.css" />
-		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+		<link rel="stylesheet" type="text/css" href="{{asset "/css/write.css"}}" />
+		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 		<meta name="google" value="notranslate">
@@ -35,7 +35,7 @@
 			</div>
 		</header>
 
-		<script src="/js/h.js"></script>
+		<script src="{{asset "/js/h.js"}}"></script>
 		<script>
 		var $writer = H.getEl('writer');
 		var $btnPublish = H.getEl('publish');
@@ -223,7 +223,7 @@
 		});
 
 		WebFontConfig = {
-			custom: { families: [ 'Lora:400,700:latin' ], urls: [ '/css/fonts.css' ] }
+			custom: { families: [ 'Lora:400,700:latin' ], urls: [ '{{asset "/css/fonts.css"}}' ] }
 		};
 		var selectedFont = H.get('{{if .Editing}}draft{{.Post.Id}}font{{else}}padFont{{end}}', '{{.Post.Font}}');
 
@@ -252,7 +252,7 @@
 		try {
 		  (function() {
 			var wf=document.createElement('script');
-			wf.src = '/js/webfont.js';
+			wf.src = '{{asset "/js/webfont.js"}}';
 			wf.type='text/javascript';
 			wf.async='true';
 			var s=document.getElementsByTagName('script')[0];

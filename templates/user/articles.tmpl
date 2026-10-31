@@ -8,6 +8,9 @@
 	#move-tmpl {
 		display: none;
 	}
+	#scheduled-posts .scheduled {
+		color: #888;
+	}
 </style>
 
 <div class="snug content-container">
@@ -18,6 +21,22 @@
 {{if .Silenced}}
 	{{template "user-silenced"}}
 {{end}}
+
+{{ if .ScheduledPosts }}
+	<h1 id="scheduled-header">Scheduled</h1>
+	<p>These posts will appear on your blog at the given time. They can already be opened via their links.</p>
+	<div id="scheduled-posts" class="atoms posts">
+	{{ range .ScheduledPosts }}<div id="post-{{.ID}}" class="post">
+		<h3><a href="/{{if not $.SingleUser}}{{.Collection.Alias}}/{{end}}{{.Slug.String}}" itemprop="url">{{.DisplayTitle}}</a></h3>
+		<h4>
+			<span class="scheduled">scheduled for <time class="scheduled-at" datetime="{{.Created8601}}">{{.ScheduledUTC}}</time>{{if gt (len $.Collections) 1}} on {{.Collection.Title}}{{end}}</span>
+			<a class="action" href="/{{if not $.SingleUser}}{{.Collection.Alias}}/{{end}}{{.Slug.String}}/edit">edit</a>
+			<a class="action" href="/{{if not $.SingleUser}}{{.Collection.Alias}}/{{end}}{{.Slug.String}}/edit/meta" title="Change when this post is published">change time</a>
+		</h4>
+		{{if .Summary}}<p>{{.SummaryHTML}}</p>{{end}}
+	</div>{{end}}
+	</div>
+{{ end }}
 
 <h1 id="posts-header">Drafts</h1>
 
@@ -44,6 +63,7 @@
 			<a class="action" href="/{{$el.ID}}" title="Publish this post to your blog '{{.DisplayTitle}}'" onclick="postActions.move(this, '{{$el.ID}}', '{{.Alias}}', {{if $.SingleUser}}true{{else}}false{{end}});return false">move to {{.DisplayTitle}}</a>
 			{{end}}
 			{{end}}
+			<a class="action" href="/{{if $.SingleUser}}d/{{end}}{{.ID}}/meta" title="Choose when to publish this post">schedule</a>
 			{{ end }}
 		</h4>
 		{{if .Summary}}<p>{{.SummaryHTML}}</p>{{end}}
@@ -80,11 +100,13 @@
 				<a class="action" href="/POST_ID" title="Publish this post to your blog '{{.DisplayTitle}}'" onclick="postActions.move(this, 'POST_ID', '{{.Alias}}', {{if $.SingleUser}}true{{else}}false{{end}});return false">move to {{.DisplayTitle}}</a>
 			{{end}}
 		{{end}}
+		<a class="action" href="/{{if .SingleUser}}d/{{end}}POST_ID/meta" title="Choose when to publish this post">schedule</a>
 	</div>
 {{ end }}
 
-<script src="/js/h.js"></script>
-<script src="/js/postactions.js"></script>
+<script src="{{asset "/js/h.js"}}"></script>
+<script src="{{asset "/js/postactions.js"}}"></script>
+<script src="{{asset "/js/scheduled.js"}}"></script>
 <script>
 var auth = true;
 function postsLoaded(n) {
@@ -222,7 +244,8 @@ function loadMorePosts() {
 }
 $loadMore.el.querySelector('a').addEventListener('click', loadMorePosts);
 </script>
-<script src="/js/posts.js"></script>
+<script src="{{asset "/js/posts.js"}}"></script>
 
 {{template "footer" .}}
 {{end}}
+

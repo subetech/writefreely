@@ -187,6 +187,11 @@ type (
 		*AnonymousAuthPost
 		CollectionAlias  string `json:"collection"`
 		CreateCollection bool   `json:"create_collection"`
+		// Created optionally sets the post's publish date (in postMetaDateFormat,
+		// UTC) when it's moved to a blog. A future date schedules the post: it
+		// stays reachable via its URL, but only shows up on the blog's index,
+		// feeds, etc. once this time has passed.
+		Created *string `json:"created"`
 
 		// Generated properties
 		Slug string `json:"-"`
@@ -285,6 +290,12 @@ func (p *Post) Created8601() string {
 
 func (p *Post) IsScheduled() bool {
 	return p.Created.After(time.Now())
+}
+
+// ScheduledUTC returns the post's publish time in UTC, for display before it's
+// converted to the reader's local time zone via JS (see static/js/scheduled.js).
+func (p *Post) ScheduledUTC() string {
+	return p.Created.UTC().Format("2006-01-02 15:04") + " UTC"
 }
 
 func (p *Post) HasTag(tag string) bool {
@@ -1747,6 +1758,11 @@ func (p *Post) IsMonospace() bool {
 
 func (rp *RawPost) UserFacingCreated() string {
 	return rp.Created.Format(postMetaDateFormat)
+}
+
+// IsScheduled returns whether the post's publish date is in the future.
+func (rp *RawPost) IsScheduled() bool {
+	return rp.Created.After(time.Now())
 }
 
 func (rp *RawPost) Created8601() string {

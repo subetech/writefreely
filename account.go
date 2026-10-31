@@ -804,6 +804,11 @@ func viewArticles(app *App, u *User, w http.ResponseWriter, r *http.Request) err
 		log.Error("unable to fetch collections: %v", err)
 	}
 
+	scheduled, err := app.db.GetScheduledPosts(u)
+	if err != nil {
+		log.Error("unable to fetch scheduled posts: %v", err)
+	}
+
 	silenced, err := app.db.IsUserSilenced(u.ID)
 	if err != nil {
 		if err == ErrUserNotFound {
@@ -814,11 +819,13 @@ func viewArticles(app *App, u *User, w http.ResponseWriter, r *http.Request) err
 	d := struct {
 		*UserPage
 		AnonymousPosts *[]PublicPost
+		ScheduledPosts []PublicPost
 		Collections    *[]Collection
 		Silenced       bool
 	}{
 		UserPage:       NewUserPage(app, r, u, u.Username+"'s Posts", f),
 		AnonymousPosts: p,
+		ScheduledPosts: scheduled,
 		Collections:    c,
 		Silenced:       silenced,
 	}

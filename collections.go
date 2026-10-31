@@ -41,6 +41,16 @@ import (
 
 const (
 	collAttrLetterReplyTo = "letter_reply_to"
+	collAttrLayout        = "layout"
+	collAttrGridLines     = "grid_lines"
+
+	// Blog index layouts
+	collLayoutList = "list" // Full posts (or excerpts), one after another
+	collLayoutGrid = "grid" // Cards with the title and the first N lines of each post
+
+	collGridLinesDefault = 3
+	collGridLinesMin     = 1
+	collGridLinesMax     = 20
 
 	collMaxLengthTitle       = 255
 	collMaxLengthDescription = 160
@@ -69,6 +79,11 @@ type (
 
 		Monetization string `json:"monetization_pointer,omitempty"`
 		Verification string `json:"verification_link"`
+
+		// Layout of the blog index: collLayoutList (default) or collLayoutGrid
+		Layout string `json:"layout,omitempty"`
+		// GridLines is the number of lines of each post shown in the grid layout
+		GridLines int `json:"grid_lines,omitempty"`
 
 		db       *datastore
 		hostName string
@@ -120,6 +135,8 @@ type (
 		Monetization *string         `schema:"monetization_pointer" json:"monetization_pointer"`
 		Verification *string         `schema:"verification_link" json:"verification_link"`
 		LetterReply  *string         `schema:"letter_reply" json:"letter_reply"`
+		Layout       *string         `schema:"layout" json:"layout"`
+		GridLines    *int            `schema:"grid_lines" json:"grid_lines"`
 		Visibility   *int            `schema:"visibility" json:"public"`
 		Format       *sql.NullString `schema:"format" json:"format"`
 	}
@@ -381,6 +398,28 @@ func (c *Collection) RenderMathJax() bool {
 
 func (c *Collection) EmailSubsEnabled() bool {
 	return c.db.CollectionHasAttribute(c.ID, "email_subs")
+}
+
+// IsGridLayout returns whether the blog index should be shown as a grid of
+// post cards.
+func (c *Collection) IsGridLayout() bool {
+	return c.Layout == collLayoutGrid
+}
+
+// GridLinesCount returns the number of post lines to show on each card in the
+// grid layout.
+func (c *Collection) GridLinesCount() int {
+	return normalizeGridLines(c.GridLines)
+}
+
+func normalizeGridLines(n int) int {
+	if n < collGridLinesMin {
+		return collGridLinesDefault
+	}
+	if n > collGridLinesMax {
+		return collGridLinesMax
+	}
+	return n
 }
 
 func (c *Collection) MonetizationURL() string {
@@ -659,8 +698,24 @@ type CollectionPage struct {
 	IsAdmin   bool
 	CanInvite bool
 
+	// Search on the blog index
+	ShowSearch    bool
+	IsSearch      bool
+	SearchQuery   string
+	SearchResults []SearchResult
+	SearchLimited bool
+	UILang        string
+
 	// Helper field for Chorus mode
 	CollAlias string
+}
+
+// IndexURL returns the path of the collection's index page.
+func (c CollectionPage) IndexURL() string {
+	if c.IsTopLevel {
+		return "/"
+	}
+	return "/" + c.Prefix + c.Alias + "/"
 }
 
 type TagCollectionPage struct {
@@ -913,6 +968,17 @@ func handleViewCollection(app *App, w http.ResponseWriter, r *http.Request) erro
 		ct = postArch
 	}
 
+	// Search posts, when a query is given on the blog index
+	searchQuery := strings.TrimSpace(r.FormValue("q"))
+	isSearch := ct != postArch && searchQuery != ""
+	var searchResults []SearchResult
+	if isSearch {
+		searchResults, err = app.db.SearchPosts(app.cfg, c, searchQuery, cr.isCollOwner)
+		if err != nil {
+			return err
+		}
+	}
+
 	// FIXME: this number will be off when user has pinned posts but isn't a Pro user
 	ppp := coll.Format.PostsPerPage()
 	if ct == postArch {
@@ -920,7 +986,10 @@ func handleViewCollection(app *App, w http.ResponseWriter, r *http.Request) erro
 	}
 
 	coll.TotalPages = int(math.Ceil(float64(coll.TotalPosts) / float64(ppp)))
-	if coll.TotalPages > 0 && page > coll.TotalPages {
+	if isSearch {
+		// Search results are shown on a single page
+		coll.TotalPages = 1
+	} else if coll.TotalPages > 0 && page > coll.TotalPages {
 		redirURL := fmt.Sprintf("/page/%d", coll.TotalPages)
 		if !app.cfg.App.SingleUser {
 			redirURL = fmt.Sprintf("/%s%s%s", cr.prefix, coll.Alias, redirURL)
@@ -928,7 +997,9 @@ func handleViewCollection(app *App, w http.ResponseWriter, r *http.Request) erro
 		return impart.HTTPError{http.StatusFound, redirURL}
 	}
 
-	coll.Posts, _ = app.db.GetPosts(app.cfg, c, page, cr.isCollOwner, false, false, "")
+	if !isSearch {
+		coll.Posts, _ = app.db.GetPosts(app.cfg, c, page, cr.isCollOwner, false, false, "")
+	}
 
 	// Serve collection
 	displayPage := CollectionPage{
@@ -939,6 +1010,12 @@ func handleViewCollection(app *App, w http.ResponseWriter, r *http.Request) erro
 		IsWelcome:         r.FormValue("greeting") != "",
 		Honeypot:          spam.HoneypotFieldName(),
 		CollAlias:         c.Alias,
+		ShowSearch:        ct != postArch && (isSearch || coll.TotalPosts > 0),
+		IsSearch:          isSearch,
+		SearchQuery:       searchQuery,
+		SearchResults:     searchResults,
+		SearchLimited:     len(searchResults) >= searchMaxResults,
+		UILang:            app.db.GetCollectionLanguage(c),
 	}
 	flashes, _ := getSessionFlashes(app, w, r, nil)
 	for _, f := range flashes {
