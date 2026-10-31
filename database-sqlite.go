@@ -16,6 +16,7 @@ package writefreely
 import (
 	"database/sql"
 	"regexp"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/mattn/go-sqlite3"
@@ -30,7 +31,12 @@ func init() {
 	}
 	sql.Register("sqlite3_with_regex", &sqlite3.SQLiteDriver{
 		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-			return conn.RegisterFunc("regexp", regex, true)
+			if err := conn.RegisterFunc("regexp", regex, true); err != nil {
+				return err
+			}
+			// SQLite's built-in LOWER() only handles ASCII; this one is
+			// Unicode-aware, so case-insensitive search works for all scripts.
+			return conn.RegisterFunc("wf_lower", strings.ToLower, true)
 		},
 	})
 }

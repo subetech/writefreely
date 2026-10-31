@@ -37,6 +37,8 @@ var (
 		"isLTR":       isLTR,
 		"localstr":    localStr,
 		"localhtml":   localHTML,
+		"uistr":       uiStr,
+		"asset":       assetURL,
 		"tolower":     strings.ToLower,
 		"title":       strings.Title,
 		"hasPrefix":   strings.HasPrefix,
@@ -132,6 +134,7 @@ func missingDirError(name, dir string, err error) error {
 // InitTemplates loads all template files from the configured parent dir.
 func InitTemplates(cfg *config.Config) error {
 	log.Info("Loading templates...")
+	initAssets(cfg)
 	templatesPath := filepath.Join(cfg.Server.TemplatesParentDir, templatesDir)
 	tmplFiles, err := os.ReadDir(templatesPath)
 	if err != nil {

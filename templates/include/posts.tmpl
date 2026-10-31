@@ -1,6 +1,6 @@
 {{ define "posts" }}
 {{ range $el := .Posts }}<article id="post-{{.ID}}" class="{{.Font}} h-entry" itemscope itemtype="http://schema.org/BlogPosting">
-	{{if .IsScheduled}}<p class="badge">Scheduled</p>{{end}}
+	{{if and $.IsOwner .IsScheduled}}<p class="badge">{{uistr "scheduled for" .Language.String}} <time class="scheduled-at" datetime="{{.Created8601}}">{{.ScheduledUTC}}</time></p>{{end}}
 	{{if .Title.String}}<h2 class="post-title" itemprop="name" class="p-name">
 		{{- if .HasTitleLink -}}
 			{{.HTMLTitle}} <a class="user hidden action" href="{{if not $.SingleUser}}/{{$.Alias}}/{{.Slug.String}}{{else}}{{$.CanonicalURL}}{{.Slug.String}}{{end}}">view{{if .IsPaid}} {{template "paid-badge" .}}{{end}}</a>
@@ -73,4 +73,44 @@
             {{if gt .CurrentPage 1}}<a style="float:right;" href="{{.PrevPageURL .Prefix .NavSuffix .CurrentPage .IsTopLevel}}">Newer &#8674;</a>{{end}}
         {{end}}
 	</nav>{{end}}
+{{end}}
+
+{{define "blog-search"}}
+<form id="blog-search" role="search" method="get" action="{{.IndexURL}}">
+	<input type="search" name="q" value="{{.SearchQuery}}" placeholder="{{uistr "search placeholder" .UILang}}" aria-label="{{uistr "search placeholder" .UILang}}" maxlength="200" />
+	<button type="submit">{{uistr "search" .UILang}}</button>
+</form>
+{{end}}
+
+{{define "search-results"}}
+<div id="search-results">
+	<p class="search-summary">
+		{{if .SearchResults}}{{uistr "search results" .UILang}}{{else}}{{uistr "search no results" .UILang}}{{end}} <strong>&laquo;{{.SearchQuery}}&raquo;</strong>{{if .SearchResults}} ({{len .SearchResults}}){{end}}
+		&middot; <a href="{{.IndexURL}}">{{uistr "search clear" .UILang}}</a>
+	</p>
+	{{range .SearchResults}}<article id="post-{{.ID}}" class="search-result {{.Font}} h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+		{{if and $.IsOwner .IsScheduled}}<p class="badge">{{uistr "scheduled for" .Language.String}} <time class="scheduled-at" datetime="{{.Created8601}}">{{.ScheduledUTC}}</time></p>{{end}}
+		<h2 class="post-title" itemprop="name"><a href="{{if not $.SingleUser}}/{{$.Alias}}/{{.Slug.String}}{{else}}{{$.CanonicalURL}}{{.Slug.String}}{{end}}" itemprop="url" class="u-url p-name">{{.TitleHTML}}</a></h2>
+		{{if $.Format.ShowDates}}<time class="dt-published" datetime="{{.Created8601}}" itemprop="datePublished" content="{{.Created}}">{{.DisplayDate}}</time>{{end}}
+		{{if .Snippet}}<p {{if .Language}}lang="{{.Language.String}}"{{end}} dir="{{.Direction}}" class="snippet p-summary">{{.Snippet}}</p>{{end}}
+	</article>{{end}}
+	{{if .SearchLimited}}<p class="search-summary">{{uistr "search limited" .UILang}}</p>{{end}}
+</div>
+{{end}}
+
+{{define "posts-grid"}}
+<div class="posts-grid" style="--grid-lines: {{.GridLinesCount}}">
+{{range $el := .Posts}}<article id="post-{{.ID}}" class="post-card {{.Font}} h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+	<a class="card-link u-url" href="{{if not $.SingleUser}}/{{$.Alias}}/{{.Slug.String}}{{else}}{{$.CanonicalURL}}{{.Slug.String}}{{end}}" itemprop="url">
+		{{if and $.IsOwner .IsScheduled}}<p class="badge">{{uistr "scheduled for" .Language.String}} <time class="scheduled-at" datetime="{{.Created8601}}">{{.ScheduledUTC}}</time></p>{{end}}
+		<h2 class="post-title p-name" itemprop="name">{{if .IsPaid}}{{template "paid-badge" .}}{{end}}{{.PlainDisplayTitle}}</h2>
+		{{if $.Format.ShowDates}}<time class="dt-published" datetime="{{.Created8601}}" itemprop="datePublished" content="{{.Created}}">{{.DisplayDate}}</time>{{end}}
+		<p {{if .Language}}lang="{{.Language.String}}"{{end}} dir="{{.Direction}}" class="preview p-summary">{{.PreviewLines $.GridLinesCount}}</p>
+	</a>
+	{{if $.IsOwner}}<div class="card-actions">
+		<a class="user hidden action" href="/{{if not $.SingleUser}}{{$.Alias}}/{{end}}{{.Slug.String}}/edit">edit</a>
+		<a class="user hidden delete action" onclick="delPost(event, '{{.ID}}')" href="/{{$.Alias}}/{{.Slug.String}}/delete">delete</a>
+	</div>{{end}}
+</article>{{end}}
+</div>
 {{end}}

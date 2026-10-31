@@ -136,6 +136,7 @@ func handleViewMeta(app *App, w http.ResponseWriter, r *http.Request) error {
 		Flashes        []string
 		NeedsToken     bool
 		Silenced       bool
+		Blogs          *[]Collection // Blogs a draft can be published to
 	}{
 		StaticPage: pageForReq(app, r),
 		Post:       &RawPost{Font: "norm"},
@@ -180,6 +181,13 @@ func handleViewMeta(app *App, w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	appData.NeedsToken = appData.User == nil || appData.User.ID != appData.Post.OwnerID
+	if appData.EditCollection == nil && appData.User != nil {
+		// Let users publish or schedule this draft from here
+		appData.Blogs, err = app.db.GetPublishableCollections(appData.User, app.cfg.App.Host)
+		if err != nil {
+			log.Error("view meta: get publishable blogs: %v", err)
+		}
+	}
 
 	if appData.Post.Gone {
 		return ErrPostUnpublished

@@ -5,8 +5,8 @@
 
 		<title>{{.DisplayTitle}}{{if not .SingleUser}} &mdash; {{.SiteName}}{{end}}</title>
 
-		<link rel="stylesheet" type="text/css" href="/css/write.css" />
-		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+		<link rel="stylesheet" type="text/css" href="{{asset "/css/write.css"}}" />
+		{{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 		<link rel="shortcut icon" href="/favicon.ico" />
 		<link rel="canonical" href="{{.CanonicalURL}}">
 		{{if gt .CurrentPage 1}}<link rel="prev" href="{{.PrevPageURL .Prefix .NavSuffix .CurrentPage .IsTopLevel}}">{{end}}
@@ -83,7 +83,7 @@
 		{{if .Silenced}}
 			{{template "user-silenced"}}
 		{{end}}
-		<h1 dir="{{.Direction}}" id="blog-title">{{if .Posts}}{{else}}<span class="writeas-prefix"><a href="/">write.as</a></span> {{end}}<a href="/{{if .IsTopLevel}}{{else}}{{.Prefix}}{{.Alias}}/{{end}}" class="h-card p-author u-url" rel="me author">{{.DisplayTitle}}</a></h1>
+		<h1 dir="{{.Direction}}" id="blog-title">{{if or .Posts .IsSearch}}{{else}}<span class="writeas-prefix"><a href="/">write.as</a></span> {{end}}<a href="/{{if .IsTopLevel}}{{else}}{{.Prefix}}{{.Alias}}/{{end}}" class="h-card p-author u-url" rel="me author">{{.DisplayTitle}}</a></h1>
 		{{if .Description}}<p class="description p-note">{{.DisplayDescription}}</p>{{end}}
 		{{/*if not .Public/*}}
 			<!--p class="meta-note"><span>Private collection</span>. Only you can see this page.</p-->
@@ -91,9 +91,10 @@
 		{{if .PinnedPosts}}<nav>
 			{{range .PinnedPosts}}<a class="pinned" href="{{if not $.SingleUser}}/{{$.Alias}}/{{.Slug.String}}{{else}}{{.CanonicalURL $.Host}}{{end}}">{{.PlainDisplayTitle}}</a>{{end}}</nav>
 		{{end}}
+		{{if .ShowSearch}}{{template "blog-search" .}}{{end}}
 		</header>
 
-		{{if .Posts}}<section id="wrapper" itemscope itemtype="http://schema.org/Blog">{{else}}<div id="wrapper">{{end}}
+		{{if or .Posts .IsSearch}}<section id="wrapper" itemscope itemtype="http://schema.org/Blog">{{else}}<div id="wrapper">{{end}}
 
 			{{if .IsWelcome}}
 			<div id="welcome">
@@ -110,9 +111,9 @@
 				</div>
 			{{end}}
 
-			{{template "posts" .}}
+			{{if .IsSearch}}{{template "search-results" .}}{{else if .IsGridLayout}}{{template "posts-grid" .}}{{else}}{{template "posts" .}}{{end}}
 
-		{{if gt .TotalPages 1}}<nav id="paging" class="content-container clearfix">
+		{{if and (not .IsSearch) (gt .TotalPages 1)}}<nav id="paging" class="content-container clearfix">
 			{{if or (and .Format.Ascending (le .CurrentPage .TotalPages)) (isRTL .Direction)}}
 				{{if gt .CurrentPage 1}}<a href="{{.PrevPageURL .Prefix .NavSuffix .CurrentPage .IsTopLevel}}">&#8672; {{if and .Format.Ascending (le .CurrentPage .TotalPages)}}Previous{{else}}Newer{{end}}</a>{{end}}
 				{{if lt .CurrentPage .TotalPages}}<a style="float:right;" href="{{.NextPageURL .Prefix .NavSuffix .CurrentPage .IsTopLevel}}">{{if and .Format.Ascending (lt .CurrentPage .TotalPages)}}Next{{else}}Older{{end}} &#8674;</a>{{end}}
@@ -124,7 +125,7 @@
 
 		{{if not .IsWelcome}}{{template "emailsubscribe" .}}{{end}}
 
-		{{if .Posts}}</section>{{else}}</div>{{end}}
+		{{if or .Posts .IsSearch}}</section>{{else}}</div>{{end}}
 
 		{{if .ShowFooterBranding }}
 		<footer>
@@ -140,10 +141,11 @@
 		{{range .ExternalScripts}}<script type="text/javascript" src="{{.}}" async></script>{{end}}
 		{{if .Script}}<script type="text/javascript">{{.ScriptDisplay}}</script>{{end}}
 	{{end}}
-	<script src="/js/h.js"></script>
-	<script src="/js/postactions.js"></script>
-	<script src="/js/localdate.js"></script>
-	<script type="text/javascript" src="/js/menu.js"></script>
+	<script src="{{asset "/js/h.js"}}"></script>
+	<script src="{{asset "/js/postactions.js"}}"></script>
+	<script src="{{asset "/js/localdate.js"}}"></script>
+	<script src="{{asset "/js/scheduled.js"}}"></script>
+	<script type="text/javascript" src="{{asset "/js/menu.js"}}"></script>
 	<script type="text/javascript">
 var deleting = false;
 function delPost(e, id, owned) {
@@ -246,11 +248,11 @@ function pinPost(e, postID, slug, title) {
 
 	try {
 	  WebFontConfig = {
-		custom: { families: [ 'Lora:400,700:latin', 'Open+Sans:400,700:latin' ], urls: [ '/css/fonts.css' ] }
+		custom: { families: [ 'Lora:400,700:latin', 'Open+Sans:400,700:latin' ], urls: [ '{{asset "/css/fonts.css"}}' ] }
 	  };
 	  (function() {
 		var wf = document.createElement('script');
-		wf.src = '/js/webfont.js';
+		wf.src = '{{asset "/js/webfont.js"}}';
 		wf.type = 'text/javascript';
 		wf.async = 'true';
 		var s = document.getElementsByTagName('script')[0];

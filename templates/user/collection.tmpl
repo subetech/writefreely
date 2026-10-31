@@ -157,6 +157,29 @@ textarea.section.norm {
 	</div>
 
 	<div class="option">
+		<h2 id="layout">Page Layout</h2>
+		<div class="section">
+			<p class="explain">Choose how posts are arranged on your blog's main page.</p>
+			<ul style="list-style:none">
+				<li>
+					<label><input type="radio" name="layout" id="layout-list" value="list" {{if not .IsGridLayout}}checked="checked"{{end}} />
+						List
+					</label>
+					<p>Posts are shown one after another, in full (or up to the <code>&lt;!--more--&gt;</code> tag).</p>
+				</li>
+				<li>
+					<label class="option-text"><input type="radio" name="layout" id="layout-grid" value="grid" {{if .IsGridLayout}}checked="checked"{{end}} />
+						Grid
+					</label>
+					<p>Posts are shown as cards with the title and the first
+						<input type="number" name="grid_lines" id="grid-lines" class="low-profile" min="1" max="20" step="1" value="{{.GridLinesCount}}" style="width:3.5em" />
+						lines of text.</p>
+				</li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="option">
 		<h2>Text Rendering</h2>
 		<div class="section">
 			<p class="explain">Customize how plain text renders on your blog.</p>
@@ -235,9 +258,9 @@ textarea.section.norm {
 			</div>
 		</div>
 
-<script src="/js/h.js"></script>
-<script src="/js/modals.js"></script>
-<script src="/js/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="{{asset "/js/h.js"}}"></script>
+<script src="{{asset "/js/modals.js"}}"></script>
+<script src="{{asset "/js/ace.js"}}" type="text/javascript" charset="utf-8"></script>
 <script>
 H.getEl('cancel-delete').on('click', closeModals);
 var deleteBlog = function(e) {

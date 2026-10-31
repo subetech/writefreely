@@ -5,8 +5,8 @@
 
 	<title>Archive &mdash; {{.Collection.DisplayTitle}}</title>
 
-	<link rel="stylesheet" type="text/css" href="/css/write.css" />
-    {{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="/local/custom.css" />{{end}}
+	<link rel="stylesheet" type="text/css" href="{{asset "/css/write.css"}}" />
+    {{if .CustomCSS}}<link rel="stylesheet" type="text/css" href="{{asset "/local/custom.css"}}" />{{end}}
 	<link rel="shortcut icon" href="/favicon.ico" />
 	<link rel="canonical" href="{{.CanonicalURL}}">
     {{if gt .CurrentPage 1}}<link rel="prev" href="{{.PrevPageURL .Prefix .NavSuffix .CurrentPage .IsTopLevel}}">{{end}}
@@ -75,7 +75,7 @@
                             {{end}}
 						</a>
                     {{- end}}
-                    {{if .IsScheduled}}[Scheduled]{{end}}
+                    {{if and $.IsOwner .IsScheduled}}<span class="scheduled">[{{uistr "scheduled for" .Language.String}} <time class="scheduled-at" datetime="{{.Created8601}}">{{.ScheduledUTC}}</time>]</span>{{end}}
                     {{if $.Format.ShowDates -}}
 						<time class="dt-published" datetime="{{.Created8601}}" pubdate itemprop="datePublished" content="{{.Created}}">
                             {{- if .HasTitleLink -}}
@@ -114,5 +114,6 @@
     {{range .ExternalScripts}}<script type="text/javascript" src="{{.}}" async></script>{{end}}
     {{if .Collection.Script}}<script type="text/javascript">{{.ScriptDisplay}}</script>{{end}}
 {{end}}
-<script src="/js/localdate.js"></script>
+<script src="{{asset "/js/localdate.js"}}"></script>
+	<script src="{{asset "/js/scheduled.js"}}"></script>
 </html>{{end}}
