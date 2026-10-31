@@ -1,0 +1,311 @@
+/*
+ * Additions: blog search, search results, grid layout, editor image uploads.
+ * Colors are mostly derived from `currentColor` so that they follow the blog's
+ * theme and any custom CSS (e.g. dark mode).
+ */
+
+body#collection {
+	/* Search form at the top of the blog index */
+	#blog-search {
+		display: flex;
+		max-width: 28em;
+		margin: 1.5em auto 0;
+		gap: 0.5em;
+
+		input[type=search] {
+			flex: 1;
+			min-width: 0;
+			font-family: inherit;
+			font-size: 1em;
+			color: inherit;
+			background: transparent;
+			border: 1px solid rgba(127, 127, 127, 0.4);
+			border-radius: 0.25em;
+			padding: 0.5em 0.75em;
+			-webkit-appearance: none;
+			appearance: none;
+			&:focus {
+				outline: none;
+				border-color: rgba(127, 127, 127, 0.9);
+			}
+			/* The "clear" cross: drawn with a mask so its color can be set */
+			&::-webkit-search-cancel-button {
+				-webkit-appearance: none;
+				appearance: none;
+				width: 0.8em;
+				height: 0.8em;
+				margin-left: 0.5em;
+				cursor: pointer;
+				background-color: #777;
+				-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1l8 8M9 1l-8 8' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+				mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1l8 8M9 1l-8 8' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+				@media (prefers-color-scheme: dark) {
+					background-color: #fff;
+				}
+			}
+		}
+		button {
+			font-family: inherit;
+			font-size: 0.9em;
+			color: inherit;
+			background: rgba(127, 127, 127, 0.12);
+			border: 1px solid rgba(127, 127, 127, 0.4);
+			border-radius: 0.25em;
+			padding: 0.5em 1em;
+			cursor: pointer;
+			&:hover {
+				background: rgba(127, 127, 127, 0.25);
+			}
+		}
+	}
+
+	/* Search results */
+	#search-results {
+		/* Search results are <article>s, which have the same width and padding
+		   as posts on the blog index; the summary lines up with them. */
+		.search-summary {
+			max-width: 40rem;
+			margin: 0 auto 2.5em;
+			padding: 0 2em;
+			color: #888;
+			strong {
+				color: inherit;
+				font-weight: bold;
+			}
+		}
+		article.search-result {
+			margin-bottom: 2.5em;
+			h2 {
+				font-size: 1.4em;
+			}
+			p.snippet {
+				margin: 0.5em 0 0;
+				line-height: 1.6;
+				white-space: normal;
+				mark {
+					background: rgba(255, 213, 79, 0.55);
+					color: inherit;
+					padding: 0 0.1em;
+					border-radius: 0.15em;
+				}
+			}
+		}
+	}
+
+	/* Grid layout */
+	.posts-grid {
+		--grid-lines: 3;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16em, 1fr));
+		gap: 1.5em;
+		max-width: 64rem;
+		margin: 0 auto 3em;
+		padding: 0 1.5em;
+		box-sizing: border-box;
+
+		article.post-card {
+			position: relative;
+			max-width: none;
+			margin: 0 !important;
+			padding: 0 !important;
+			border: 1px solid rgba(127, 127, 127, 0.25);
+			border-radius: 0.5em;
+			transition: border-color .2s ease, box-shadow .2s ease;
+			&:hover {
+				border-color: rgba(127, 127, 127, 0.55);
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+			}
+
+			a.card-link {
+				display: block;
+				height: 100%;
+				box-sizing: border-box;
+				padding: 1.25em 1.25em 1.5em;
+				color: inherit;
+				text-decoration: none;
+			}
+			p.badge {
+				float: none;
+				margin-bottom: 0.75em;
+				font-size: 0.75em;
+				line-height: 1.4;
+				time {
+					color: inherit;
+				}
+			}
+			h2.post-title {
+				color: inherit;
+				font-size: 1.25em;
+				line-height: 1.3;
+				margin: 0 0 0.35em;
+			}
+			time.dt-published {
+				display: block;
+				font-size: 0.85em;
+				color: #888;
+				margin: 0 0 0.5em;
+			}
+			p.preview {
+				margin: 0.5em 0 0;
+				font-size: 0.95em;
+				line-height: 1.55;
+				white-space: pre-line;
+				overflow: hidden;
+				display: -webkit-box;
+				-webkit-box-orient: vertical;
+				-webkit-line-clamp: var(--grid-lines);
+				line-clamp: var(--grid-lines);
+				opacity: 0.85;
+			}
+			.card-actions {
+				position: absolute;
+				right: 0.75em;
+				bottom: 0.35em;
+				font-size: 0.8em;
+				a {
+					margin-left: 0.75em;
+				}
+			}
+			&:hover .hidden {
+				opacity: 1;
+			}
+		}
+	}
+}
+
+@media all and (max-width: 600px) {
+	body#collection .posts-grid {
+		grid-template-columns: 1fr;
+		padding: 0 1em;
+	}
+}
+
+/* Editor: image uploads */
+body#pad {
+	#tools #belt a#open-media {
+		.material-icons {
+			font-size: 24px;
+			vertical-align: middle;
+			color: #333;
+		}
+	}
+	&.dark #tools #belt a#open-media .material-icons {
+		color: #fff;
+	}
+}
+
+#modal-media {
+	.media-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		h2 {
+			margin: 0;
+		}
+		#media-close {
+			font-size: 1.75em;
+			line-height: 1;
+			text-decoration: none;
+			color: #888 !important;
+			&:hover {
+				color: inherit !important;
+			}
+		}
+	}
+	.media-drop {
+		margin: 1em 0 0.5em;
+		padding: 1.25em 1em;
+		text-align: center;
+		border: 2px dashed rgba(127, 127, 127, 0.4);
+		border-radius: 0.5em;
+		transition: border-color .15s ease, background-color .15s ease;
+		p {
+			margin: 0.25em 0;
+		}
+		&.dragging {
+			border-color: rgba(127, 127, 127, 0.9);
+			background-color: rgba(127, 127, 127, 0.1);
+		}
+		.media-pick {
+			text-decoration: underline;
+			cursor: pointer;
+			input[type=file] {
+				display: none;
+			}
+		}
+	}
+	#media-status {
+		min-height: 1.2em;
+		margin: 0.5em 0;
+		&.error {
+			color: @dangerCol;
+		}
+	}
+	.media-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
+		gap: 0.75em;
+		max-height: 55vh;
+		overflow-y: auto;
+		padding: 0.25em 0.1em;
+
+		.media-item {
+			display: flex;
+			flex-direction: column;
+			border: 1px solid rgba(127, 127, 127, 0.3);
+			border-radius: 0.35em;
+			overflow: hidden;
+
+			a {
+				display: block;
+				aspect-ratio: 1 / 1;
+				background: rgba(127, 127, 127, 0.12);
+			}
+			img {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.media-actions {
+				display: flex;
+				border-top: 1px solid rgba(127, 127, 127, 0.3);
+			}
+			button.media-copy {
+				flex: 1;
+				font-family: inherit;
+				font-size: 0.75em;
+				padding: 0.5em 0.25em;
+				border: 0;
+				white-space: nowrap;
+				& + button.media-copy {
+					border-left: 1px solid rgba(127, 127, 127, 0.3);
+				}
+				background: transparent;
+				color: inherit;
+				cursor: pointer;
+				&:hover {
+					background: rgba(127, 127, 127, 0.15);
+				}
+				&.copied {
+					color: #2e7d32;
+				}
+			}
+		}
+	}
+}
+
+/* "Scheduled for <date>" badges: on their own line, so they don't squeeze the
+   post's first lines */
+body#post article p.badge,
+body#collection #wrapper article:not(.post-card) p.badge {
+	float: none;
+	margin: 0 0 1em;
+}
+
+#wrapper.archive ul li span.scheduled {
+	color: #888;
+	font-size: 0.9em;
+	margin: 0 1em;
+	text-align: right;
+}
